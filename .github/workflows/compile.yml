@@ -1,0 +1,66 @@
+name: QMK Compile
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/**"
+      - "qmk_firmware/**"
+      - "keyboards/**"
+      - "pyproject.toml"
+      - ".python-version"
+      - "uv.lock"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tools/**"
+      - "qmk_firmware/**"
+      - "keyboards/**"
+      - "pyproject.toml"
+      - ".python-version"
+      - "uv.lock"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Install QMK build dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+          gcc-avr \
+          avr-libc \
+          avrdude \
+          dfu-programmer \
+          dfu-util \
+          dos2unix
+
+      - name: Install QMK build dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew tap osx-cross/avr
+          brew install avr-gcc avrdude dfu-programmer dfu-util dos2unix
+
+      - name: Compile Atreus firmware
+        run: make compile
