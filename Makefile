@@ -1,8 +1,5 @@
 .PHONY: compile flash check format
 
-setup:
-	@uv run qmk setup
-
 compile:
 	@uv run python tools/qmk_task.py compile
 
